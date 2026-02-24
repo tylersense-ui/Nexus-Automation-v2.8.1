@@ -43,14 +43,15 @@ export async function main(ns) {
                 repRaw = parts[3]?.trim() || "0";
             }
 
+            // ✅ FIX CRITIQUE : Multiplicateurs corrigés (étaient tous décalés d'un facteur ×1000)
             const parseNexusVal = (str) => {
                 if (!str) return 0;
                 let val = str.replace(/[$,\s]/g, "").toLowerCase();
                 let multiplier = 1;
-                if (val.endsWith("k")) { multiplier = 1; val = val.slice(0, -1); } 
-                else if (val.endsWith("m")) { multiplier = 1e3; val = val.slice(0, -1); } 
-                else if (val.endsWith("b")) { multiplier = 1e6; val = val.slice(0, -1); } 
-                else if (val.endsWith("t")) { multiplier = 1e9; val = val.slice(0, -1); }
+                if (val.endsWith("k"))      { multiplier = 1e3;  val = val.slice(0, -1); }
+                else if (val.endsWith("m")) { multiplier = 1e6;  val = val.slice(0, -1); }
+                else if (val.endsWith("b")) { multiplier = 1e9;  val = val.slice(0, -1); }
+                else if (val.endsWith("t")) { multiplier = 1e12; val = val.slice(0, -1); }
                 return parseFloat(val.replace(",", "")) * multiplier || 0;
             };
 
