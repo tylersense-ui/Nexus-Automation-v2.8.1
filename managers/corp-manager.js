@@ -35,13 +35,13 @@ export async function main(ns) {
             const office = c.getOffice(divisionName, city);
             
             if (office.size > office.numEmployees) {
-                for(let i=0; i < (office.size - office.numEmployees); i++) {
+                for (let i = 0; i < (office.size - office.numEmployees); i++) {
                     c.hireEmployee(divisionName, city);
                 }
                 await c.setAutoJobAssignment(divisionName, city, "Operations", Math.floor(office.size * 0.4));
-                await c.setAutoJobAssignment(divisionName, city, "Engineer", Math.floor(office.size * 0.3));
-                await c.setAutoJobAssignment(divisionName, city, "Business", Math.floor(office.size * 0.2));
-                await c.setAutoJobAssignment(divisionName, city, "Management", Math.ceil(office.size * 0.1));
+                await c.setAutoJobAssignment(divisionName, city, "Engineer",    Math.floor(office.size * 0.3));
+                await c.setAutoJobAssignment(divisionName, city, "Business",    Math.floor(office.size * 0.2));
+                await c.setAutoJobAssignment(divisionName, city, "Management",  Math.ceil(office.size  * 0.1));
             }
 
             if (corp.funds > c.getOfficeSizeUpgradeCost(divisionName, city, 3)) {
@@ -55,8 +55,11 @@ export async function main(ns) {
             }
         }
 
-        c.sellMaterial(divisionName, "Aevum", "Plants", "MAX", "MP");
-        c.sellMaterial(divisionName, "Aevum", "Food", "MAX", "MP");
+        // ✅ FIX : Vente sur toutes les villes de la division (était hardcodé sur "Aevum" uniquement)
+        for (const city of division.cities) {
+            c.sellMaterial(divisionName, city, "Plants", "MAX", "MP");
+            c.sellMaterial(divisionName, city, "Food",   "MAX", "MP");
+        }
 
         const upgrades = ["Smart Factories", "Neural Accelerators", "FocusWires", "ABC Sales"];
         for (const upgrade of upgrades) {
