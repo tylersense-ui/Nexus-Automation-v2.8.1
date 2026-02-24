@@ -34,7 +34,8 @@ export async function main(ns) {
         // Fichiers racine
         root: [
             { remote: "boot.js",        local: "boot.js" },
-            { remote: "global-kill.js", local: "global-kill.js" }
+            { remote: "global-kill.js", local: "global-kill.js" },
+            { remote: "Liste_Cannonique_augmentations_bitburner.txt", local: "Liste_Cannonique_augmentations_bitburner.txt"}
         ],
 
         // Cerveau du système
