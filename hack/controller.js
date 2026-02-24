@@ -39,12 +39,20 @@ export async function main(ns) {
             // Exécution avec Salt (Math.random) pour autoriser le multi-threading simultané sur la même cible
             let pid = ns.exec(scriptPath, job.host, job.threads, job.target || "network", job.delay || 0, Math.random());
 
-            // Correction Ghost in the Shell : Boucle anti-perte de job
-            while (pid === 0 && job.threads > 0) {
-                await ns.asleep(5); // Pause de 5ms pour laisser la RAM se libérer
+            // ✅ FIX : Limite de tentatives ajoutée (évite la boucle infinie si RAM insuffisante)
+            let retries = 0;
+            const MAX_RETRIES = 20;
+            while (pid === 0 && job.threads > 0 && retries < MAX_RETRIES) {
+                await ns.asleep(10);
                 pid = ns.exec(scriptPath, job.host, job.threads, job.target || "network", job.delay || 0, Math.random());
+                retries++;
+            }
+
+            // ✅ Log d'avertissement si le job est définitivement droppé
+            if (pid === 0) {
+                log.warn(`Job droppé après ${MAX_RETRIES} tentatives : [${job.type}] sur ${job.host} (${job.threads}t) → RAM insuffisante ?`);
             }
         }
-        await ns.asleep(1); // Latence de boucle minimale pour vider le port rapidement
+        await ns.asleep(1);
     }
 }
