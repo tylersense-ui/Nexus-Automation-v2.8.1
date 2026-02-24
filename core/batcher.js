@@ -15,10 +15,12 @@ export async function main(ns) {
     const net = new Network(ns, caps);
     const ph = new PortHandler(ns);
     
-    // Sécurisation Apex : On utilise la constante de configuration si elle existe, sinon 6.
     const SHARE_PORT = CONFIG.PORTS.SHARE_RATIO || 6;
     const spacer = CONFIG.HACKING.BATCH_SPACING;
-    
+
+    // ✅ FIX : Coût RAM lu dynamiquement (était hardcodé à 4.0)
+    const SHARE_COST = ns.getScriptRam("/hack/workers/share.js");
+
     let lastRatio = 0;
 
     ns.tprint(`🚀 Nexus Giga-Batcher Apex v44.0 : Système de commande synchronisé`);
@@ -27,7 +29,6 @@ export async function main(ns) {
         let currentRatio = lastRatio;
         let foundNewData = false;
 
-        // Vider proprement le port VIA PORT-HANDLER (Plus de ns.read qui crée des fichiers !)
         while (!ph.isEmpty(SHARE_PORT)) {
             const config = ph.readJSON(SHARE_PORT);
             if (config && config.shareRatio !== undefined) {
@@ -67,7 +68,8 @@ export async function main(ns) {
                 let max = ns.getServerMaxRam(node);
                 if (node === "home") max -= CONFIG.HACKING.RESERVED_HOME_RAM;
                 
-                let targetThreads = Math.floor((max * currentRatio) / 4.0);
+                // ✅ FIX : Utilisation de SHARE_COST dynamique (était hardcodé 4.0)
+                let targetThreads = Math.floor((max * currentRatio) / SHARE_COST);
                 let currentThreads = 0;
                 
                 ns.ps(node).forEach(p => {
@@ -78,7 +80,8 @@ export async function main(ns) {
                     let free = ns.getServerMaxRam(node) - ns.getServerUsedRam(node);
                     if (node === "home") free -= CONFIG.HACKING.RESERVED_HOME_RAM;
                     
-                    let toSend = Math.min(targetThreads - currentThreads, Math.floor(free / 4.0));
+                    // ✅ FIX : Utilisation de SHARE_COST dynamique (était hardcodé 4.0)
+                    let toSend = Math.min(targetThreads - currentThreads, Math.floor(free / SHARE_COST));
                     if (toSend > 0) {
                         ph.writeJSON(CONFIG.PORTS.COMMANDS, { type: 'share', host: node, threads: toSend });
                     }
@@ -92,9 +95,9 @@ export async function main(ns) {
             for (const targetName of targets) {
                 const server = ns.getServer(targetName);
                 if (server.hackDifficulty <= server.minDifficulty + 0.1 && server.moneyAvailable >= server.moneyMax * 0.99) {
-                    await dispatchHwgwBatch(ns, ph, nodes, server, spacer, currentRatio);
+                    dispatchHwgwBatch(ns, ph, nodes, server, spacer, currentRatio);
                 } else {
-                    await dispatchPreparation(ns, ph, nodes, server, currentRatio);
+                    dispatchPreparation(ns, ph, nodes, server, currentRatio);
                 }
             }
         }
@@ -109,7 +112,7 @@ export async function main(ns) {
  * @param {Server} target
  * @param {number} ratio
  */
-async function dispatchPreparation(ns, ph, nodes, target, ratio) {
+function dispatchPreparation(ns, ph, nodes, target, ratio) {
     let secDiff = target.hackDifficulty - target.minDifficulty;
     for (const node of nodes) {
         let max = ns.getServerMaxRam(node);
@@ -137,16 +140,25 @@ async function dispatchPreparation(ns, ph, nodes, target, ratio) {
  * @param {number} spacer
  * @param {number} ratio
  */
-async function dispatchHwgwBatch(ns, ph, nodes, target, spacer, ratio) {
+function dispatchHwgwBatch(ns, ph, nodes, target, spacer, ratio) {
     const hackPercent = 0.10;
-    const hThreads = Math.max(1, Math.floor(ns.hackAnalyzeThreads(target.hostname, target.moneyMax * hackPercent)));
+    const hThreads  = Math.max(1, Math.floor(ns.hackAnalyzeThreads(target.hostname, target.moneyMax * hackPercent)));
     const w1Threads = Math.ceil(ns.hackAnalyzeSecurity(hThreads) / 0.05);
-    const gThreads = Math.ceil(ns.growthAnalyze(target.hostname, 1 / (1 - hackPercent)));
+    const gThreads  = Math.ceil(ns.growthAnalyze(target.hostname, 1 / (1 - hackPercent)));
     const w2Threads = Math.ceil(ns.growthAnalyzeSecurity(gThreads) / 0.05);
-    const batch = [{type:'hack',t:hThreads,d:0},{type:'weaken',t:w1Threads,d:spacer},{type:'grow',t:gThreads,d:spacer*2},{type:'weaken',t:w2Threads,d:spacer*3}];
-    let nodeIdx = 0;
+
+    const batch = [
+        { type: 'hack',   t: hThreads,  d: 0 },
+        { type: 'weaken', t: w1Threads, d: spacer },
+        { type: 'grow',   t: gThreads,  d: spacer * 2 },
+        { type: 'weaken', t: w2Threads, d: spacer * 3 }
+    ];
+
     for (const job of batch) {
+        // ✅ FIX CRITIQUE : nodeIdx réinitialisé pour chaque job (causait des jobs non dispatchés)
+        let nodeIdx = 0;
         let remaining = job.t;
+
         while (remaining > 0 && nodeIdx < nodes.length) {
             let node = nodes[nodeIdx];
             let max = ns.getServerMaxRam(node);
