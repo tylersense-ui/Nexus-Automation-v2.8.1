@@ -13,10 +13,10 @@ export async function main(ns) {
     const caps = new Capabilities(ns);
     const net = new Network(ns, caps);
 
-    // Sécurisation UI : Ouvre explicitement le log avant de le manipuler
     ns.ui.openTail();
-    ns.moveTail(10, 500); 
-    ns.resizeTail(538, 200);
+    // ✅ FIX : ns.moveTail() et ns.resizeTail() remplacés par ns.ui.* (APIs dépréciées en v2)
+    ns.ui.moveTail(10, 500);
+    ns.ui.resizeTail(538, 200);
 
     while (true) {
         ns.clearLog();
