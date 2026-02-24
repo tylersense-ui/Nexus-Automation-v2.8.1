@@ -23,6 +23,11 @@ export async function main(ns) {
         { name: "HACKNET",    path: "/managers/hacknet-manager.js" }
     ];
 
+    // ✅ FIX : Singularity manager ajouté (fichier existait mais n'était jamais lancé)
+    if (caps.singularity && ns.fileExists("/managers/singularity.js")) {
+        modules.push({ name: "SINGULARITY", path: "/managers/singularity.js" });
+    }
+
     for (const mod of modules) {
         if (ns.fileExists(mod.path)) {
             if (!ns.scriptRunning(mod.path, "home")) {
@@ -36,15 +41,14 @@ export async function main(ns) {
 
     ns.tprint("✅ Kernel en ligne. Surveillance du réseau activée.");
 
-    // Boucle de maintenance (rooting automatique réparé)
+    // Boucle de maintenance (rooting automatique)
     while (true) {
         const targets = net.refresh().filter(n => !ns.hasRootAccess(n));
         for (const target of targets) {
-            // Application du protocole de crack
             if (net.crack(target)) {
                 ns.print(`🔓 ROOT SÉCURISÉ : Accès administrateur obtenu sur ${target}`);
             }
         }
-        await ns.asleep(60000); // Check toutes les minutes pour sauver le CPU
+        await ns.asleep(60000);
     }
 }
