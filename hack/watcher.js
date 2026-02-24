@@ -20,7 +20,7 @@ export async function main(ns) {
 
     while (true) {
         ns.clearLog();
-        const targets = net.getTopTargets(5);
+        const targets = net.getTopTargets(6);
         
         ns.print("--- NEXUS MONITORING ---");
         for (const t of targets) {
@@ -35,3 +35,4 @@ export async function main(ns) {
         await ns.asleep(2000);
     }
 }
+
