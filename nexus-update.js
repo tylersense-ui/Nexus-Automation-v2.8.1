@@ -24,7 +24,7 @@ export async function main(ns) {
     const GITHUB_USER   = "tylersense-ui";
     const GITHUB_REPO   = "Nexus-Automation-v2.8.1";
     const GITHUB_BRANCH = "main";
-    const BASE_URL = `https://raw.githubusercontent.com/${GITHUB_USER}/${GITHUB_REPO}/refs/heads/${GITHUB_BRANCH}`;
+    const BASE_URL = `https://raw.githubusercontent.com/${GITHUB_USER}/${GITHUB_REPO}/${GITHUB_BRANCH}`;
 
     // ============================================================
     // CATALOGUE COMPLET DES FICHIERS DU REPO
